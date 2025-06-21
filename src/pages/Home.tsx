@@ -4,10 +4,10 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
 import { Rocket, Code, Palette, Zap, Star, ArrowRight, Sparkles, Download } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const Home = () => {
-  const featuredProjects = [
+  const featuredProjects = useMemo(() => [
     {
       id: 1,
       title: "Clipboard Manager",
@@ -29,7 +29,7 @@ const Home = () => {
       image: "/src/pages/project_3.png",
       tags: ["HTML", "CSS", "JavaScript", "Responsive Design"],
     }
-  ];
+  ], []);
 
   const skills = [
     { icon: Code, name: "Frontend Development", color: "text-blue-500" },
@@ -43,7 +43,54 @@ const Home = () => {
   useEffect(() => {
     // Set mounted state to true after initial render
     setMounted(true);
-  }, []);
+
+    // Create an Intersection Observer for scroll animations
+    const observerOptions = {
+      root: null, // viewport as root
+      rootMargin: '0px 0px -100px 0px', // trigger a bit earlier before element is fully in view
+      threshold: 0.1 // 10% of the element visible is enough to trigger
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          // Once animation is triggered, no need to observe anymore
+          observer.unobserve(entry.target);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
+    
+    // Observe sections that should animate on scroll
+    const featuredHeader = document.getElementById('featured-projects-header');
+    const exploreSection = document.getElementById('explore-projects-section');
+    
+    // Observe all project cards
+    const projectCards = [];
+    featuredProjects.forEach(project => {
+      const card = document.getElementById(`project-card-${project.id}`);
+      if (card) {
+        observer.observe(card);
+        projectCards.push(card);
+      }
+    });
+    
+    if (featuredHeader) observer.observe(featuredHeader);
+    if (exploreSection) observer.observe(exploreSection);
+    
+    return () => {
+      if (featuredHeader) observer.unobserve(featuredHeader);
+      if (exploreSection) observer.unobserve(exploreSection);
+      
+      // Cleanup project card observers
+      projectCards.forEach(card => {
+        observer.unobserve(card);
+      });
+    };
+  }, [featuredProjects]);
 
   return (
     <div className="page-section active space-y-0 relative overflow-hidden min-h-screen">
@@ -147,30 +194,40 @@ const Home = () => {
           <div className="absolute bottom-1/4 right-1/2 w-3 h-3 bg-purple-500/20 rounded-full animate-gentle-pulse" style={{ animationDelay: "3.5s" }}></div>
         </div>
 
-        <div className="text-center mb-16 relative z-10">
-          <div className="featured-section-badge inline-flex items-center gap-2 mb-6 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
+        <div className="text-center mb-16 relative z-10 opacity-0 translate-y-12" 
+          style={{ 
+            transition: "opacity 1s ease-out, transform 1s ease-out", 
+            transitionDelay: "100ms" 
+          }}
+          id="featured-projects-header"
+        >
+          <div className="featured-section-badge inline-flex items-center gap-2 mb-6">
             <Rocket className="w-5 h-5 text-blue-500 animate-gentle-pulse" />
             <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Featured Work
             </span>
           </div>
-          <h2 className="featured-title-enhanced text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "forwards" }}>
+          <h2 className="featured-title-enhanced text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6">
             Featured Projects
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-[700px] mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: "300ms", animationFillMode: "forwards" }}>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-[700px] mx-auto leading-relaxed">
             Discover my latest creations where innovation meets design, crafted with passion and precision
           </p>
           
           {/* Enhanced decorative elements */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent rounded-full animate-fade-in" style={{ animationDelay: "400ms", animationFillMode: "forwards" }}></div>
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent rounded-full"></div>
         </div>
 
         <div className="projects-grid px-4">
           {featuredProjects.map((project, index) => (
             <Card 
               key={project.id} 
-              className="project-card-enhanced group text-card-foreground"
-              style={{ animationDelay: `${500 + index * 150}ms` }}
+              id={`project-card-${project.id}`}
+              className="project-card-enhanced group text-card-foreground opacity-0 translate-y-12"
+              style={{ 
+                transition: "opacity 0.8s ease-out, transform 0.8s ease-out",
+                transitionDelay: `${300 + index * 200}ms`
+              }}
             >
               <div className="project-image-container rounded-t-xl">
                 <AspectRatio ratio={16 / 9}>
@@ -233,7 +290,13 @@ const Home = () => {
           ))}
         </div>
 
-        <div className="mt-16 text-center animate-fade-in" style={{ animationDelay: "1s", animationFillMode: "forwards" }}>
+        <div className="mt-16 text-center opacity-0 translate-y-12" 
+          style={{ 
+            transition: "opacity 1s ease-out, transform 1s ease-out", 
+            transitionDelay: "200ms" 
+          }}
+          id="explore-projects-section"
+        >
           <div className="inline-flex flex-col items-center gap-4">
             {/* Decorative line */}
             <div className="w-24 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
@@ -241,7 +304,7 @@ const Home = () => {
             <Button 
               asChild 
               size="lg"
-              className="project-button-enhanced rounded-full px-8 py-3 text-base font-medium group border-2 border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-950/50 dark:to-purple-950/50 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/70 dark:hover:to-purple-900/70 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105"
+              className="project-button-enhanced rounded-full px-8 py-3 text-base font-medium group border-2 border-blue-500/30 hover:border-blue-500/50 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white dark:text-white hover:text-white dark:hover:text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105"
             >
               <Link to="/projects" className="flex items-center gap-3">
                 <div className="relative">
