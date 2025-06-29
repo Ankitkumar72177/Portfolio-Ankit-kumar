@@ -243,7 +243,7 @@ const Home = () => {
           ))}
         </div>
 
-        <div className="mt-16 text-center opacity-0 translate-y-12 px-6" 
+        <div className="mt-16 text-center opacity-0 translate-y-12 px-6"
           style={{ 
             transition: "opacity 1s ease-out, transform 1s ease-out", 
             transitionDelay: "200ms" 
