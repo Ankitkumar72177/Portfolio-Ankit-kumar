@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
+import { EnhancedProjectCard } from "@/components/EnhancedProjectCard";
 import { Code, Globe, Rocket, ExternalLink, Github, Sparkles, Filter } from "lucide-react";
 
 type Project = {
@@ -170,112 +172,12 @@ const Projects = () => {
         {/* Projects Grid */}
         <div className="projects-grid">
           {filteredProjects.map((project, index) => (
-            <Card 
-              key={project.id} 
-              className="project-card-compact group text-card-foreground"
-              style={{
-                animationDelay: `${index * 80}ms`
-              }}
-            >
-              {/* Project Image */}
-              <div className="project-image-compact rounded-t-xl overflow-hidden relative">
-                <img 
-                  src={project.image} 
-                  alt={project.title}
-                  className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-                />
-                {/* Overlay with quick actions */}
-                <div className="absolute inset-0 z-20 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  {project.demoUrl && (
-                    <Button asChild variant="secondary" size="sm" className="backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 shadow-lg hover:scale-110 transition-transform duration-200">
-                      <a href={project.demoUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                  {project.codeUrl && (
-                    <Button asChild variant="secondary" size="sm" className="backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 shadow-lg hover:scale-110 transition-transform duration-200">
-                      <a href={project.codeUrl} target="_blank" rel="noreferrer">
-                        <Github className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Card Content */}
-              <CardContent className="project-content-compact relative z-10 space-y-3">
-                {/* Enhanced tags section */}
-                <div className="project-tags-compact flex flex-wrap gap-1.5">
-                  {project.tags.map((tag, tagIndex) => (
-                    <Badge 
-                      key={tag} 
-                      className={cn(
-                        "project-tag-compact transition-all duration-300 hover:scale-105 text-xs",
-                        filter === tag 
-                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md" 
-                          : "hover:bg-blue-200/80 dark:hover:bg-blue-900/50"
-                      )}
-                      style={{ animationDelay: `${index * 80 + tagIndex * 40}ms` }}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                
-                {/* Enhanced title with better typography */}
-                <h3 className="project-title-compact font-serif text-lg md:text-xl font-bold leading-tight">
-                  {project.title}
-                </h3>
-                
-                {/* Enhanced description */}
-                <p className="project-description-compact text-muted-foreground text-xs md:text-sm leading-relaxed line-clamp-2">
-                  {project.description}
-                </p>
-              </CardContent>
-              
-              {/* Card Footer */}
-              <CardFooter className="project-footer-compact relative z-10 flex flex-wrap gap-2">
-                <Button 
-                  asChild 
-                  className="project-button-compact flex-1"
-                  size="sm"
-                >
-                  <Link to={project.url} className="flex items-center justify-center gap-1.5">
-                    <Rocket className="h-3.5 w-3.5" />
-                    <span className="font-medium text-xs">View Details</span>
-                  </Link>
-                </Button>
-                
-                {project.demoUrl && (
-                  <Button 
-                    asChild 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:scale-105 text-xs"
-                  >
-                    <a href={project.demoUrl} target="_blank" rel="noreferrer">
-                      <Globe className="h-3.5 w-3.5 mr-1" />
-                      Demo
-                    </a>
-                  </Button>
-                )}
-                
-                {project.codeUrl && (
-                  <Button 
-                    asChild 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 hover:scale-105 text-xs"
-                  >
-                    <a href={project.codeUrl} target="_blank" rel="noreferrer">
-                      <Code className="h-3.5 w-3.5 mr-1" />
-                      Code
-                    </a>
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
+            <EnhancedProjectCard
+              key={project.id}
+              project={project}
+              index={index}
+              variant="projects"
+            />
           ))}
         </div>
       </div>

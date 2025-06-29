@@ -3,17 +3,23 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
+import { TextHoverEffect } from "@/components/ui/text-hover-effect";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
+import { EnhancedProjectCard } from "@/components/EnhancedProjectCard";
 import { Rocket, Code, Palette, Zap, Star, ArrowRight, Sparkles, Download } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const Home = () => {
-  const featuredProjects = [
+  const featuredProjects = useMemo(() => [
     {
       id: 1,
       title: "Clipboard Manager",
       description: "A feature-rich clipboard manager that provides an efficient way to store, organize, and retrieve clipboard history.",
       image: "/src/pages/project_1.png",
       tags: ["React", "LocalStorage", "UI/UX", "Web App"],
+      url: "/projects/1",
+      demoUrl: "https://clipboard-manager.netlify.app/",
+      codeUrl: "https://github.com/Ankitkumar72177/Clipboard-Manager",
     },
     {
       id: 2,
@@ -21,6 +27,9 @@ const Home = () => {
       description: "A sleek, responsive portfolio website designed to showcase professional work with elegant animations and intuitive navigation.",
       image: "/src/pages/project_2.png",
       tags: ["React", "Tailwind CSS", "TypeScript", "Responsive Design"],
+      url: "/projects/2",
+      demoUrl: "",
+      codeUrl: "",
     },
     {
       id: 3,
@@ -28,8 +37,11 @@ const Home = () => {
       description: "An elegant and interactive profile card component that displays personal information in a stylish, responsive layout.",
       image: "/src/pages/project_3.png",
       tags: ["HTML", "CSS", "JavaScript", "Responsive Design"],
+      url: "/projects/3",
+      demoUrl: "https://ankitkumar72177.github.io/ProfileCard/",
+      codeUrl: "https://github.com/Ankitkumar72177/ProfileCard",
     }
-  ];
+  ], []);
 
   const skills = [
     { icon: Code, name: "Frontend Development", color: "text-blue-500" },
@@ -43,10 +55,57 @@ const Home = () => {
   useEffect(() => {
     // Set mounted state to true after initial render
     setMounted(true);
-  }, []);
+
+    // Create an Intersection Observer for scroll animations
+    const observerOptions = {
+      root: null, // viewport as root
+      rootMargin: '0px 0px -100px 0px', // trigger a bit earlier before element is fully in view
+      threshold: 0.1 // 10% of the element visible is enough to trigger
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          // Once animation is triggered, no need to observe anymore
+          observer.unobserve(entry.target);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
+    
+    // Observe sections that should animate on scroll
+    const featuredHeader = document.getElementById('featured-projects-header');
+    const exploreSection = document.getElementById('explore-projects-section');
+    
+    // Observe all project cards
+    const projectCards = [];
+    featuredProjects.forEach(project => {
+      const card = document.getElementById(`project-card-${project.id}`);
+      if (card) {
+        observer.observe(card);
+        projectCards.push(card);
+      }
+    });
+    
+    if (featuredHeader) observer.observe(featuredHeader);
+    if (exploreSection) observer.observe(exploreSection);
+    
+    return () => {
+      if (featuredHeader) observer.unobserve(featuredHeader);
+      if (exploreSection) observer.unobserve(exploreSection);
+      
+      // Cleanup project card observers
+      projectCards.forEach(card => {
+        observer.unobserve(card);
+      });
+    };
+  }, [featuredProjects]);
 
   return (
-    <div className="page-section active space-y-0 relative overflow-hidden min-h-screen">
+    <div className="w-full space-y-0 relative overflow-hidden min-h-full">
       {/* Enhanced Animated Background Elements - Only render after mounting */}
       {mounted && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -66,7 +125,7 @@ const Home = () => {
       )}
 
       {/* Hero Section - Optimized to prevent flickering */}
-      <section className="relative flex flex-col items-center text-center space-y-8 py-20 md:py-32">
+      <section className="relative flex flex-col items-center text-center space-y-8 py-20 md:py-32 px-6 container mx-auto">
         {/* Enhanced Floating Stars - Only rendered after mounting */}
         {mounted && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -79,14 +138,16 @@ const Home = () => {
           </div>
         )}
 
-        <div className="relative z-10 space-y-6">
+        <div className="relative z-10 space-y-8">
           <div className="animate-fade-in" style={{ animationDuration: "500ms" }}>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tight">
-              <span className="block">Hello, I'm</span>
-              <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Ankit Kumar
-              </span>
-            </h1>
+            <div className="text-center space-y-8">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold tracking-tight text-foreground animate-float-gentle">
+                Hello, I'm
+              </h2>
+              <div className="relative w-full max-w-4xl mx-auto h-28 md:h-36 lg:h-44 flex items-center justify-center">
+                <TextHoverEffect text="Ankit Kumar" className="w-full h-full" />
+              </div>
+            </div>
           </div>
           
           <div className="animate-fade-in" style={{ animationDuration: "800ms", animationDelay: "200ms" }}>
@@ -134,7 +195,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-20 animate-fade-in relative" style={{ animationDelay: "200ms" }}>
+      <section className="py-20 animate-fade-in relative px-6 container mx-auto" style={{ animationDelay: "200ms" }}>
         {/* Enhanced Floating particles for featured section */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <Sparkles className="absolute top-10 left-1/4 w-6 h-6 text-blue-400/30 animate-float hover:text-blue-400/50 transition-colors duration-300" style={{ animationDelay: "1s" }} />
@@ -147,93 +208,48 @@ const Home = () => {
           <div className="absolute bottom-1/4 right-1/2 w-3 h-3 bg-purple-500/20 rounded-full animate-gentle-pulse" style={{ animationDelay: "3.5s" }}></div>
         </div>
 
-        <div className="text-center mb-16 relative z-10">
-          <div className="featured-section-badge inline-flex items-center gap-2 mb-6 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
+        <div className="text-center mb-16 relative z-10 opacity-0 translate-y-12" 
+          style={{ 
+            transition: "opacity 1s ease-out, transform 1s ease-out", 
+            transitionDelay: "100ms" 
+          }}
+          id="featured-projects-header"
+        >
+          <div className="featured-section-badge inline-flex items-center gap-2 mb-6">
             <Rocket className="w-5 h-5 text-blue-500 animate-gentle-pulse" />
             <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Featured Work
             </span>
           </div>
-          <h2 className="featured-title-enhanced text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "forwards" }}>
+          <h2 className="featured-title-enhanced text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6">
             Featured Projects
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-[700px] mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: "300ms", animationFillMode: "forwards" }}>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-[700px] mx-auto leading-relaxed">
             Discover my latest creations where innovation meets design, crafted with passion and precision
           </p>
           
           {/* Enhanced decorative elements */}
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent rounded-full animate-fade-in" style={{ animationDelay: "400ms", animationFillMode: "forwards" }}></div>
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent rounded-full"></div>
         </div>
 
         <div className="projects-grid px-4">
           {featuredProjects.map((project, index) => (
-            <Card 
-              key={project.id} 
-              className="project-card-enhanced group text-card-foreground"
-              style={{ animationDelay: `${500 + index * 150}ms` }}
-            >
-              <div className="project-image-container rounded-t-xl">
-                <AspectRatio ratio={16 / 9}>
-                  <img 
-                    src={project.image} 
-                    alt={project.title}
-                    className="project-image-enhanced object-cover w-full h-full"
-                  />
-                </AspectRatio>
-                
-                {/* Enhanced overlay with gradient and effects */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end justify-center pb-4">
-                  <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
-                      <Sparkles className="w-4 h-4" />
-                      <span>View Details</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <CardContent className="p-6 relative z-10 space-y-4">
-                {/* Enhanced tags section */}
-                <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag, tagIndex) => (
-                    <Badge 
-                      key={tag} 
-                      className="tag-enhanced"
-                      style={{ animationDelay: `${700 + index * 150 + tagIndex * 50}ms` }}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                
-                {/* Enhanced title with better typography */}
-                <h3 className="project-title-enhanced font-serif text-xl md:text-2xl font-bold leading-tight">
-                  {project.title}
-                </h3>
-                
-                {/* Enhanced description */}
-                <p className="project-description-enhanced text-muted-foreground text-sm md:text-base leading-relaxed line-clamp-3">
-                  {project.description}
-                </p>
-              </CardContent>
-
-              <CardFooter className="p-6 pt-0 relative z-10">
-                <Button 
-                  asChild 
-                  className="project-button-enhanced w-full group/btn"
-                >
-                  <Link to={`/projects/${project.id}`} className="flex items-center justify-center gap-2">
-                    <Rocket className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
-                    <span className="font-medium">View Project</span>
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+            <EnhancedProjectCard
+              key={project.id}
+              project={project}
+              index={index}
+              variant="home"
+            />
           ))}
         </div>
 
-        <div className="mt-16 text-center animate-fade-in" style={{ animationDelay: "1s", animationFillMode: "forwards" }}>
+        <div className="mt-16 text-center opacity-0 translate-y-12 px-6" 
+          style={{ 
+            transition: "opacity 1s ease-out, transform 1s ease-out", 
+            transitionDelay: "200ms" 
+          }}
+          id="explore-projects-section"
+        >
           <div className="inline-flex flex-col items-center gap-4">
             {/* Decorative line */}
             <div className="w-24 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
@@ -241,7 +257,7 @@ const Home = () => {
             <Button 
               asChild 
               size="lg"
-              className="project-button-enhanced rounded-full px-8 py-3 text-base font-medium group border-2 border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-r from-blue-50/80 to-purple-50/80 dark:from-blue-950/50 dark:to-purple-950/50 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/70 dark:hover:to-purple-900/70 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105"
+              className="project-button-enhanced rounded-full px-8 py-3 text-base font-medium group border-2 border-blue-500/30 hover:border-blue-500/50 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white dark:text-white hover:text-white dark:hover:text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-105"
             >
               <Link to="/projects" className="flex items-center gap-3">
                 <div className="relative">

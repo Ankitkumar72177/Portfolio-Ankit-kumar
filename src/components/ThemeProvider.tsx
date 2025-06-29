@@ -1,25 +1,12 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "dark" | "light" | "system";
+import { useEffect, useState } from "react";
+import { ThemeProviderContext, initialState, Theme } from "../hooks/theme-context";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
 };
-
-type ThemeProviderState = {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-};
-
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -38,19 +25,35 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement;
-
+    
+    // First, pause all transitions
+    root.classList.add('theme-transitioning');
+    
+    // Force a reflow to ensure the class takes effect
+    void root.offsetWidth;
+    
+    // Remove existing theme classes
     root.classList.remove("light", "dark");
-
+    
+    // Apply new theme class
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
         ? "dark"
         : "light";
-
       root.classList.add(systemTheme);
     } else {
       root.classList.add(theme);
     }
+    
+    // Force another reflow before re-enabling transitions
+    void root.offsetWidth;
+    
+    // Re-enable transitions after a tiny delay to ensure DOM updates
+    setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 16); // one frame at 60fps
+    
   }, [theme]);
 
   // Listen for system theme changes
@@ -87,12 +90,3 @@ export function ThemeProvider({
     </ThemeProviderContext.Provider>
   );
 }
-
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
-
-  return context;
-};

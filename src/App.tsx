@@ -7,11 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Layout } from "@/components/Layout";
 
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Projects from "./pages/Projects";
+import ScrollablePage from "./pages/ScrollablePage";
 import ProjectDetail from "./pages/ProjectDetail";
-import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,11 +22,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/projects" element={<Projects />} />
+              <Route path="/" element={<ScrollablePage />} />
+              <Route path="/about" element={<ScrollablePage />} />
+              <Route path="/projects" element={<ScrollablePage />} />
+              <Route path="/contact" element={<ScrollablePage />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

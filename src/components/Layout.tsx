@@ -1,67 +1,135 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MobileMenu } from "@/components/MobileMenu";
 import { useEffect, useState } from "react";
-import { Code, Sparkles, Github, Twitter, Linkedin, Mail, MessageCircle, Phone } from "lucide-react";
+import { Code, Sparkles, Github, Linkedin, Mail, MessageCircle, Phone, Home, User, Briefcase } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function Layout() {
   const location = useLocation();
   const [isMounted, setIsMounted] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   
   useEffect(() => {
     setIsMounted(true);
     
+    // Check for hash in URL on mount and set active section
+    const hash = location.hash.replace('#', '');
+    if (hash) {
+      setActiveSection(hash);
+    } else {
+      // Set initial active section based on path
+      const path = location.pathname;
+      if (path === "/") setActiveSection("home");
+      else if (path === "/about") setActiveSection("about");
+      else if (path === "/projects") setActiveSection("projects");
+      else if (path === "/contact") setActiveSection("contact");
+      else setActiveSection("");
+    }
+    
+    // Add scroll event listener to track active section and header shadow
     const handleScroll = () => {
+      // Check if scrolled for header shadow
       setIsScrolled(window.scrollY > 10);
+      
+      const scrollPosition = window.scrollY + 64; // Offset for header
+      
+      // Check which section is in view
+      const sections = ["home", "about", "projects", "contact"];
+      for (const id of sections) {
+        const element = document.getElementById(id);
+        if (!element) continue;
+        
+        const offsetTop = element.offsetTop;
+        const offsetHeight = element.offsetHeight;
+        
+        if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+          setActiveSection(id);
+          break;
+        }
+      }
     };
     
+    // Listen for section change events from ScrollablePage
+    const handleSectionChange = (event: CustomEvent) => {
+      const { sectionId } = event.detail;
+      setActiveSection(sectionId);
+    };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('section-change', handleSectionChange as EventListener);
+    
+    // Call once on mount
+    handleScroll();
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('section-change', handleSectionChange as EventListener);
+    };
+  }, [location]);
 
   const navItems = [
-    { name: "Home", path: "/", icon: "🏠", logoComponent: null },
-    { name: "About", path: "/about", icon: "👤", logoComponent: null },
-    { name: "Projects", path: "/projects", icon: "💼", logoComponent: null },
-    // Blog link hidden as requested
-    { 
-      name: "Contact", 
-      path: "/contact", 
-      icon: null,
-      logoComponent: () => (
-        <div className="relative flex items-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-sm opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-            <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 p-1 rounded-full group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300 shadow-sm">
-              <MessageCircle className="h-3 w-3 text-white" />
-            </div>
-          </div>
-        </div>
-      )
-    },
+    { name: "Home", path: "/", icon: Home, id: "home" },
+    { name: "About", path: "/about", icon: User, id: "about" },
+    { name: "Projects", path: "/projects", icon: Briefcase, id: "projects" },
+    { name: "Contact", path: "/contact", icon: MessageCircle, id: "contact" },
   ];
+  
+  // Function to handle clicking on a navigation item
+  const handleNavClick = (path: string, id: string) => {
+    // First set the active section
+    setActiveSection(id);
+    
+    // Determine if we're already on a scrollable page route
+    const scrollableRoutes = ["", "/", "/about", "/projects", "/contact"];
+    const isOnScrollablePage = scrollableRoutes.includes(location.pathname);
+    
+    if (isOnScrollablePage) {
+      // We're on a scrollable page, so just scroll to the section
+      const element = document.getElementById(id);
+      if (element) {
+        // Use scrollIntoView with options for smooth scrolling and alignment
+        element.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "start"  // Align the top of the element with the top of the viewport
+        });
+        
+        // Update URL without reload
+        window.history.replaceState(null, '', path);
+      }
+    } else {
+      // We're not on a scrollable page, navigate to the path
+      // The section ID will be in the path, and ScrollablePage will handle scrolling
+      window.location.href = path;
+    }
+  };
 
   return (
-    <div className="flex min-h-screen flex-col antialiased transition-colors duration-300">
-      {/* Enhanced Navigation Header */}
-      <header className={cn(
-        "sticky top-0 z-50 border-b border-border/30 backdrop-blur-xl supports-[backdrop-filter]:bg-background/30 transition-all duration-300",
-        isScrolled 
-          ? "bg-background/50 shadow-lg shadow-black/5 border-border/40" 
-          : "bg-background/20 border-border/20"
-      )}>
-        {/* Dynamic gradient overlay */}
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-r from-blue-500/3 via-purple-500/3 to-pink-500/3 pointer-events-none transition-opacity duration-300",
-          isScrolled ? "opacity-100" : "opacity-30"
-        )}></div>
-        
-        <div className="container relative">
-          <div className="flex h-16 items-center justify-between">
-            {/* Enhanced Logo Section */}
-            <div className="flex items-center gap-8">
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full antialiased transition-all duration-500 ease-out">
+        <Sidebar className="h-screen border-r border-border/30 bg-sidebar transition-all duration-400">
+          <SidebarHeader className={cn(
+            "border-b border-border/30 !p-0 sticky top-0 z-20 nav-sticky bg-sidebar",
+            isScrolled && "nav-scrolled"
+          )}>
+            <div className="flex items-center justify-center gap-3 px-4 h-16">
+              {/* Enhanced Logo Section */}
               <Link 
                 to="/" 
                 className="group flex items-center gap-3 font-serif text-xl font-bold transition-all duration-300 hover:scale-105"
@@ -82,157 +150,156 @@ export function Layout() {
                 {/* Sparkle Effect on Hover */}
                 <Sparkles className="h-4 w-4 text-yellow-500 opacity-0 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-300" />
               </Link>
-
-              {/* Enhanced Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-2">
-                {navItems.map((item, index) => (
-                  <Link 
-                    key={item.path}
-                    to={item.path} 
-                    className={cn(
-                      "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 group nav-item-enhanced",
-                      "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-950/50 dark:hover:to-purple-950/50",
-                      "hover:text-blue-600 dark:hover:text-blue-400",
-                      "hover:scale-105 hover:shadow-sm",
-                      location.pathname === item.path 
-                        ? "bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-600 dark:text-blue-400 shadow-sm" 
-                        : "text-muted-foreground"
-                    )}
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    {/* Content */}
-                    <span className="relative flex items-center gap-2 z-10">
-                      {/* Custom Logo Component for Contact - positioned before text */}
-                      {item.logoComponent && (
-                        <item.logoComponent />
-                      )}
-                      
-                      {item.icon && (
-                        <span className="text-sm group-hover:scale-110 transition-transform duration-200">
-                          {item.icon}
-                        </span>
-                      )}
-                      {item.name}
-                    </span>
-                    
-                    {/* Active Indicator */}
-                    {location.pathname === item.path && (
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
-                    )}
-                    
-                    {/* Hover Indicator */}
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-8 transition-all duration-300 rounded-full"></div>
-                  </Link>
-                ))}
-              </nav>
             </div>
+          </SidebarHeader>
 
-            {/* Enhanced Right Section */}
-            <div className="flex items-center gap-3">
-              {/* Theme Toggle with Enhanced Styling */}
-              <ThemeToggle />
+          <SidebarContent className="overflow-y-auto bg-sidebar">
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={activeSection === item.id}
+                        className={cn(
+                          "relative group transition-all duration-300 sidebar-menu-button",
+                          activeSection === item.id 
+                            ? "bg-gradient-to-r from-blue-100/70 to-purple-100/70 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-600 dark:text-blue-400 shadow-sm font-medium" 
+                            : "hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-purple-50/80 dark:hover:from-blue-950/50 dark:hover:to-purple-950/50"
+                        )}
+                        data-active={activeSection === item.id ? "true" : "false"}
+                      >
+                        <Link 
+                          to={item.path} 
+                          className="flex items-center gap-2 w-full"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleNavClick(item.path, item.id);
+                          }}
+                        >
+                          <item.icon className={cn(
+                            "h-4 w-4 transition-transform duration-300",
+                            activeSection === item.id && "text-blue-600 dark:text-blue-400 scale-110"
+                          )} />
+                          <span>{item.name}</span>
+                          
+                          {/* Active Indicator */}
+                          {activeSection === item.id && (
+                            <div className="absolute right-2 w-1 h-4 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></div>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+
+          <SidebarFooter className="border-t border-sidebar-border bg-sidebar">
+            <div className="flex flex-col gap-4 p-2">
+              {/* Theme Toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
               
-              {/* Enhanced Mobile Menu */}
-              <MobileMenu />
+              {/* Phone Contact */}
+              <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                <div className="text-sm text-muted-foreground mb-1">Phone</div>
+                <a 
+                  href="tel:+917217734805"
+                  className="group flex items-center gap-2 hover:text-foreground transition-all duration-300 hover:scale-105 p-1 rounded"
+                >
+                  <Phone className="h-3 w-3 group-hover:rotate-12 transition-transform duration-300" />
+                  <span>+91 7217734805</span>
+                </a>
+              </div>
             </div>
-          </div>
-        </div>
-      </header>
+          </SidebarFooter>
+          <SidebarRail />
+        </Sidebar>
 
-      <main className="flex-1 container py-10 transition-all duration-300">
-        {isMounted && <Outlet />}
-      </main>
-      
-      {/* Enhanced Footer */}
-      <footer className="border-t border-border/40 bg-background/50 backdrop-blur-sm py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-20 md:flex-row">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <p className="text-center text-sm text-muted-foreground md:text-left">
-              &copy; {new Date().getFullYear()} 
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium ml-1">
-                Ankit Kumar
-              </span>
-              . All rights reserved.
-            </p>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Built with</span>
-              <span className="text-red-500 animate-pulse">♥</span>
-              <span>and React</span>
-            </div>
-          </div>
-          
-          {/* Mobile Contact Information */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground md:hidden">
-            <a 
-              href="mailto:ankit_kumar.ag22@nsut.ac.in"
-              className="group flex items-center gap-1.5 hover:text-foreground transition-all duration-300 hover:scale-105"
-            >
-              <Mail className="h-3.5 w-3.5 group-hover:rotate-12 transition-transform duration-300" />
-              <span>Email</span>
-            </a>
-            <a 
-              href="tel:+917217734805"
-              className="group flex items-center gap-1.5 hover:text-foreground transition-all duration-300 hover:scale-105"
-            >
-              <Phone className="h-3.5 w-3.5 group-hover:rotate-12 transition-transform duration-300" />
-              <span>Phone</span>
-            </a>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            {/* Contact Information */}
-            <div className="hidden md:flex items-center gap-4 text-xs text-muted-foreground border-r border-border/40 pr-4">
-              <a 
-                href="mailto:ankit_kumar.ag22@nsut.ac.in"
-                className="group flex items-center gap-1.5 hover:text-foreground transition-all duration-300 hover:scale-105"
-              >
-                <Mail className="h-3.5 w-3.5 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden lg:inline">ankit_kumar.ag22@nsut.ac.in</span>
-                <span className="lg:hidden">Email</span>
-              </a>
-              <a 
-                href="tel:+917217734805"
-                className="group flex items-center gap-1.5 hover:text-foreground transition-all duration-300 hover:scale-105"
-              >
-                <Phone className="h-3.5 w-3.5 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden lg:inline">+91 7217734805</span>
-                <span className="lg:hidden">Phone</span>
-              </a>
+        <SidebarInset>
+          {/* Top Header with Sidebar Trigger */}
+          <header className={cn(
+            "flex h-16 shrink-0 items-center gap-2 border-b border-border/30 px-4 nav-sticky bg-background/95",
+            isScrolled && "nav-scrolled"
+          )}>
+            <SidebarTrigger className="" />
+            
+            {/* Social Links in Header */}
+            <div className="flex items-center gap-3 ml-auto mr-4">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a 
+                      href="mailto:ankit_kumar.ag22@nsut.ac.in"
+                      className="group flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-300 header-social-link"
+                      aria-label="Email"
+                    >
+                      <Mail className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">ankit_kumar.ag22@nsut.ac.in</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a 
+                      href="https://github.com/Ankitkumar7217734" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="group flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-300 header-social-link"
+                      aria-label="GitHub"
+                    >
+                      <Github className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">GitHub</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a 
+                      href="https://linkedin.com" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="group flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-300 header-social-link"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin className="h-4 w-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">LinkedIn</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             
-            {/* Social Links */}
-            <div className="flex items-center gap-4 sm:gap-6">
-              <a 
-                href="https://github.com/Ankitkumar72177" 
-                target="_blank" 
-                rel="noreferrer"
-                className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105"
-              >
-                <Github className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden sm:inline">GitHub</span>
-              </a>
-              <a 
-                href="https://twitter.com" 
-                target="_blank" 
-                rel="noreferrer"
-                className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105"
-              >
-                <Twitter className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden sm:inline">Twitter</span>
-              </a>
-              <a 
-                href="https://linkedin.com" 
-                target="_blank" 
-                rel="noreferrer"
-                className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105"
-              >
-                <Linkedin className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden sm:inline">LinkedIn</span>
-              </a>
+            <div>
+              <span className="text-sm text-muted-foreground">
+                &copy; {new Date().getFullYear()} 
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-medium ml-1">
+                  Ankit Kumar
+                </span>
+              </span>
             </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+          </header>
+
+          <main className="flex-1 overflow-auto bg-background scroll-smooth pt-0 h-screen">
+            <div className="min-h-full">
+              {isMounted && <Outlet />}
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
